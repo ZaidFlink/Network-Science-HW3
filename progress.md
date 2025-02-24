@@ -8,22 +8,22 @@
 
 ## Datasets to Process
 - [ ] Citeseer
-- [ ] Cora
+- [x] Cora
 - [ ] PubMed
 - [ ] (Bonus) ogbn-arxiv
 
 ## Required Steps
 
 ### 1. Data Preparation
-- [ ] Download and load datasets
+- [x] Download and load datasets
+  - [x] Cora dataset
   - [ ] Citeseer dataset
-  - [ ] Cora dataset
   - [ ] PubMed dataset
   - [ ] (Bonus) ogbn-arxiv dataset
-- [ ] Implement train/test split for node classification
-  - [ ] 20 nodes per class for training
-  - [ ] 500 nodes for validation
-  - [ ] 1000 nodes for testing
+- [x] Implement train/test split for node classification
+  - [x] 20 nodes per class for training
+  - [x] 500 nodes for validation
+  - [x] 1000 nodes for testing
 - [ ] Implement edge splitting for link prediction
   - [ ] Randomly remove 20% of edges
   - [ ] Ensure graph remains connected
@@ -31,11 +31,21 @@
 
 ### 2. Node Classification Algorithm Implementation (Task 1)
 Need to implement at least 2 node classification algorithms:
-- [ ] Algorithm 1 (e.g., GCN)
-  - [ ] Implementation
-  - [ ] Testing
-  - [ ] Validation
-- [ ] Algorithm 2 (e.g., GraphSAGE)
+- [x] Algorithm 1 (Label Propagation)
+  - [x] Implementation
+  - [x] Testing
+  - [x] Validation
+  - [x] Performance metrics
+    - Best Test Accuracy: 44.00%
+    - Best Test F1-Score: 46.72%
+  - Known Issues & Potential Improvements:
+    - Overfitting (100% train vs 44% test accuracy)
+    - Not utilizing graph structure explicitly
+    - Could add regularization
+    - Could try feature selection/dimensionality reduction
+    - Could implement cross-validation for more robust results
+    - Current performance is reasonable for a baseline but can be improved
+- [ ] Algorithm 2 (e.g., GCN)
   - [ ] Implementation
   - [ ] Testing
   - [ ] Validation
@@ -109,13 +119,13 @@ For each dataset:
 - [ ] Document bonus implementations (if applicable)
 
 ## Technical Requirements
-- Python environment setup
+- [x] Python environment setup
 - Required libraries:
-  - [ ] PyTorch/TensorFlow
-  - [ ] NetworkX
-  - [ ] NumPy
-  - [ ] Scikit-learn
-  - [ ] Pandas
+  - [x] PyTorch
+  - [x] NetworkX
+  - [x] NumPy
+  - [x] Scikit-learn
+  - [x] Pandas
   - [ ] OGB (for ogbn-arxiv)
 
 ## Notes
