@@ -1,0 +1,14 @@
+{
+    "train_acc_mean": 1.0,
+    "train_acc_std": 0.0,
+    "val_acc_mean": 0.6448,
+    "val_acc_std": 0.013090454537562869,
+    "test_acc_mean": 0.2217,
+    "test_acc_std": 0.00661891229734917,
+    "train_f1_mean": 1.0,
+    "train_f1_std": 0.0,
+    "val_f1_mean": 0.643322626518918,
+    "val_f1_std": 0.014296126438919235,
+    "test_f1_mean": 0.2061163053009163,
+    "test_f1_std": 0.004878144801915641
+}

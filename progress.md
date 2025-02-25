@@ -136,4 +136,60 @@ For each dataset:
 - Must maintain consistent splits across algorithms for fair comparison
 - Bonus opportunities:
   - Implement algorithms from last 5 years (+10% per task)
-  - Include ogbn-arxiv dataset (+5% per task) 
+  - Include ogbn-arxiv dataset (+5% per task)
+
+# GCN Implementation Progress
+
+## Current Status
+- Implemented basic GCN model for Cora dataset
+- Running multiple experiments (10 runs)
+- Current performance:
+  - Test Accuracy: 34.93% ± 2.06%
+  - Test F1 Score: 32.03% ± 1.64%
+  - (Far below paper's reported 81.5% accuracy)
+
+## Identified Issues
+1. **Severe Performance Gap**
+   - Large gap between validation (70%) and test (35%) accuracy
+   - Training accuracy reaches ~97% indicating severe overfitting
+   - Model fails to generalize despite good validation performance
+
+2. **Training Dynamics**
+   - Early convergence to suboptimal solutions
+   - Unstable learning process with high variance between runs
+   - Current learning rate and scheduler may be suboptimal
+
+3. **Architecture Issues**
+   - Current skip connections might be too aggressive (0.2 weight)
+   - Dropout strategy (0.7 for first layer) might be too strong
+   - Graph convolution may not be capturing neighborhood information effectively
+
+## Next Steps
+1. **Architecture Improvements**
+   - Revisit skip connection implementation
+   - Adjust dropout rates (try 0.5 for both layers)
+   - Consider adding residual connections between layers
+
+2. **Training Optimizations**
+   - Implement proper weight initialization
+   - Fine-tune learning rate and scheduler
+   - Add proper regularization techniques
+
+3. **Data Processing**
+   - Review adjacency matrix normalization
+   - Investigate feature preprocessing
+   - Consider adding feature augmentation
+
+4. **Validation Strategy**
+   - Implement k-fold cross validation
+   - Add model ensemble techniques
+   - Better early stopping criteria
+
+## Target Metrics
+- Aim to achieve accuracy closer to paper's reported 81.5%
+- Reduce gap between validation and test performance
+- Improve stability across different runs
+
+## References
+- Original GCN paper: Kipf & Welling (2017)
+- Current implementation based on PyTorch 
