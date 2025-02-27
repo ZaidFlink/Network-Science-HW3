@@ -1,0 +1,10 @@
+dataset,model,accuracy,variance
+citeseer,GCN,0.2302,0.0
+citeseer,GAT,0.3102,0.0
+citeseer,GraphSAGE,0.6687,0.0
+cora,GCN,0.2106,0.0
+cora,GAT,0.2463,0.0
+cora,GraphSAGE,0.6355,0.0001
+pubmed,GCN,0.4246,0.0
+pubmed,GAT,0.4263,0.0
+pubmed,GraphSAGE,0.8047,0.0002

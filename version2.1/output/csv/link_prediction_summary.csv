@@ -1,0 +1,13 @@
+dataset,model,auc,std_dev
+citeseer,GAE,0.874,0.0247
+citeseer,VGAE,0.8685,0.0305
+citeseer,GAAE,0.8637,0.023
+citeseer,MLPLinkPredictor,0.8989,0.0399
+cora,GAE,0.889,0.0185
+cora,VGAE,0.8846,0.0159
+cora,GAAE,0.8951,0.0135
+cora,MLPLinkPredictor,0.9107,0.0244
+pubmed,GAE,0.9528,0.0041
+pubmed,VGAE,0.9487,0.0061
+pubmed,GAAE,0.9404,0.0065
+pubmed,MLPLinkPredictor,0.8395,0.0254
