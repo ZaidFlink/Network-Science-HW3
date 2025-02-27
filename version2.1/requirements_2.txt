@@ -1,6 +1,8 @@
 scipy>=1.7.0
 numpy>=1.20.0
 torch>=1.9.0
-networkx>=2.6.0 
+networkx>=2.6.0
 torch-geometric>=2.0.0
 scikit-learn>=1.0.0
+matplotlib>=3.4.0
+tqdm>=4.62.0

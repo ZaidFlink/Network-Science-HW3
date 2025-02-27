@@ -8,6 +8,9 @@ import numpy as np
 import random
 from train_model import load_processed_data
 from sklearn.metrics import roc_auc_score
+from torch_geometric.nn import VGAE
+# Removing Node2Vec import since we're replacing it
+# from torch_geometric.nn.models import Node2Vec
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -32,7 +35,78 @@ class GAE(torch.nn.Module):
     def forward(self, data):
         z = self.encode(data.x, data.edge_index)
         return self.decode(z, data.edge_index)
+
+class VGAEEncoder(torch.nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(VGAEEncoder, self).__init__()
+        self.conv1 = pyg_nn.GCNConv(in_channels, 2 * out_channels)
+        self.conv_mu = pyg_nn.GCNConv(2 * out_channels, out_channels)
+        self.conv_logstd = pyg_nn.GCNConv(2 * out_channels, out_channels)
+
+    def forward(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        return self.conv_mu(x, edge_index), self.conv_logstd(x, edge_index)
+
+# New GAAE model using GAT layers for attention-based encoding
+class GAAE(torch.nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(GAAE, self).__init__()
+        self.conv1 = pyg_nn.GATConv(in_channels, 2 * out_channels, heads=2, dropout=0.2)
+        self.conv2 = pyg_nn.GATConv(4 * out_channels, out_channels, heads=1, concat=False, dropout=0.2)
+        
+    def encode(self, x, edge_index):
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        return self.conv2(x, edge_index)
     
+    def decode(self, z, edge_label_index):
+        value = (z[edge_label_index[0]] * z[edge_label_index[1]]).sum(dim=-1)
+        return value.view(-1)
+    
+    def forward(self, data):
+        z = self.encode(data.x, data.edge_index)
+        return self.decode(z, data.edge_index)
+
+# New MLP Link Predictor model using fully connected layers
+class MLPLinkPredictor(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels=64):
+        super(MLPLinkPredictor, self).__init__()
+        # Base encoder to get node embeddings
+        self.encoder = torch.nn.Sequential(
+            pyg_nn.GCNConv(in_channels, 2 * hidden_channels),
+            torch.nn.ReLU(),
+            pyg_nn.GCNConv(2 * hidden_channels, hidden_channels)
+        )
+        
+        # MLP to predict links
+        self.predictor = torch.nn.Sequential(
+            torch.nn.Linear(2 * hidden_channels, hidden_channels),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_channels, 1)
+        )
+    
+    def encode(self, x, edge_index):
+        for i, layer in enumerate(self.encoder):
+            if isinstance(layer, pyg_nn.GCNConv):
+                x = layer(x, edge_index)
+            else:
+                x = layer(x)
+        return x
+    
+    def decode(self, z, edge_label_index):
+        # Concatenate the embeddings of the source and target nodes
+        z_src = z[edge_label_index[0]]
+        z_dst = z[edge_label_index[1]]
+        z_cat = torch.cat([z_src, z_dst], dim=1)
+        
+        # Pass through MLP predictor
+        return self.predictor(z_cat).view(-1)
+    
+    def forward(self, data):
+        z = self.encode(data.x, data.edge_index)
+        return self.decode(z, data.edge_index)
+
 def compute_auc(pos_scores, neg_scores):
     """Compute Area Under the ROC Curve (AUC) from positive and negative scores."""
     y_true = torch.cat([torch.ones(pos_scores.shape[0]), torch.zeros(neg_scores.shape[0])]).numpy()
@@ -87,7 +161,9 @@ def manual_link_split(data, test_ratio=0.2):
     return train_data, test_pos_edge_index, test_neg_edge_index
 
 def train_link_prediction(model, data, runs=10, epochs=200):
+    """Train GAE, VGAE, GAAE or MLP models for link prediction."""
     auc_scores = []
+    run_results = []
     
     for run in range(runs):
         torch.manual_seed(run)
@@ -114,17 +190,24 @@ def train_link_prediction(model, data, runs=10, epochs=200):
             neg_edge_index = generate_negative_edges(train_data.edge_index, train_data.num_nodes, 
                                                     train_data.edge_index.size(1))
             
-            z = model.encode(train_data.x, train_data.edge_index)
-            
-            # Compute loss for positive edges
-            pos_out = model.decode(z, train_data.edge_index)
-            pos_loss = -torch.log(torch.sigmoid(pos_out) + 1e-15).mean()
-            
-            # Compute loss for negative edges
-            neg_out = model.decode(z, neg_edge_index)
-            neg_loss = -torch.log(1 - torch.sigmoid(neg_out) + 1e-15).mean()
-            
-            loss = pos_loss + neg_loss
+            if isinstance(model, VGAE):
+                # VGAE training
+                z = model.encode(train_data.x, train_data.edge_index)
+                loss = model.recon_loss(z, train_data.edge_index)
+                loss = loss + (1 / train_data.num_nodes) * model.kl_loss()
+            else:
+                # GAE, GAAE, or MLP training
+                z = model.encode(train_data.x, train_data.edge_index)
+                
+                # Compute loss for positive edges
+                pos_out = model.decode(z, train_data.edge_index)
+                pos_loss = -torch.log(torch.sigmoid(pos_out) + 1e-15).mean()
+                
+                # Compute loss for negative edges
+                neg_out = model.decode(z, neg_edge_index)
+                neg_loss = -torch.log(1 - torch.sigmoid(neg_out) + 1e-15).mean()
+                
+                loss = pos_loss + neg_loss
             
             loss.backward()
             optimizer.step()
@@ -143,11 +226,12 @@ def train_link_prediction(model, data, runs=10, epochs=200):
             # Compute AUC
             auc = compute_auc(pos_scores, neg_scores)
             auc_scores.append(auc)
+            run_results.append(auc)
             print(f"Run {run+1}/{runs}, AUC: {auc:.4f}")
 
     mean_auc = np.mean(auc_scores)
     std_auc = np.std(auc_scores)
-    return mean_auc, std_auc
+    return mean_auc, std_auc, run_results
 
 def generate_negative_edges(edge_index, num_nodes, num_samples):
     """Generate negative edges (edges that don't exist in the graph)."""
@@ -179,19 +263,36 @@ if __name__ == "__main__":
         # Try multiple link prediction models
         models = {
             "GAE": GAE(input_dim, 16),
+            "VGAE": VGAE(VGAEEncoder(input_dim, 16)),
+            "GAAE": GAAE(input_dim, 16),          # New model: Graph Attention Autoencoder
+            "MLPLinkPredictor": MLPLinkPredictor(input_dim, 16)  # New model: MLP Link Predictor
         }
         
         md_content += f"## Dataset: {dataset}\n\n"
-        md_content += "| Model | AUC | Std Dev |\n"
-        md_content += "|-------|------|----------|\n"
         
         for model_name, model in models.items():
             print(f"Training {model_name} on {dataset}...")
-            mean_auc, std_auc = train_link_prediction(model, data)
-            md_content += f"| {model_name} | {mean_auc:.4f} | {std_auc:.4f} |\n"
+            
+            mean_auc, std_auc, run_results = train_link_prediction(model, data)
+                
+            # Add per-run results
+            md_content += f"### {model_name} Results\n\n"
+            md_content += "#### Individual Run Results\n\n"
+            md_content += "| Run | AUC |\n"
+            md_content += "|-----|------|\n"
+            
+            for i, auc in enumerate(run_results):
+                md_content += f"| {i+1} | {auc:.4f} |\n"
+                
+            # Add summary statistics
+            md_content += "\n#### Summary Statistics\n\n"
+            md_content += "| Model | Mean AUC | Std Dev |\n"
+            md_content += "|-------|----------|----------|\n"
+            md_content += f"| {model_name} | {mean_auc:.4f} | {std_auc:.4f} |\n\n"
+            
             print(f"{model_name} on {dataset}: AUC: {mean_auc:.4f}, Std Dev: {std_auc:.4f}")
         
-        md_content += "\n"
+        md_content += "---\n\n"
 
     output_path = os.path.join(OUTPUT_DIR, "link_prediction_output.md")
     with open(output_path, "w") as f:
