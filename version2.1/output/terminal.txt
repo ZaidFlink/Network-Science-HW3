@@ -1,0 +1,40 @@
+.venvsaifalami@Mac Network-Science-HW3 % python3 version2.1/src/link_prediction.py
+Processing dataset: citeseer
+Training GAE on citeseer...
+Run 1/10, AUC: 0.8134
+Run 2/10, AUC: 0.8583
+Run 3/10, AUC: 0.8648
+Run 4/10, AUC: 0.8788
+Run 5/10, AUC: 0.8729
+Run 6/10, AUC: 0.8875
+Run 7/10, AUC: 0.8903
+Run 8/10, AUC: 0.8963
+Run 9/10, AUC: 0.8961
+Run 10/10, AUC: 0.8991
+GAE on citeseer: AUC: 0.8757, Std Dev: 0.0246
+Processing dataset: cora
+Training GAE on cora...
+Run 1/10, AUC: 0.8596
+Run 2/10, AUC: 0.8744
+Run 3/10, AUC: 0.8830
+Run 4/10, AUC: 0.8835
+Run 5/10, AUC: 0.8984
+Run 6/10, AUC: 0.9083
+Run 7/10, AUC: 0.9065
+Run 8/10, AUC: 0.9035
+Run 9/10, AUC: 0.9096
+Run 10/10, AUC: 0.8843
+GAE on cora: AUC: 0.8911, Std Dev: 0.0159
+Processing dataset: pubmed
+Training GAE on pubmed...
+Run 1/10, AUC: 0.9438
+Run 2/10, AUC: 0.9475
+Run 3/10, AUC: 0.9520
+Run 4/10, AUC: 0.9523
+Run 5/10, AUC: 0.9562
+Run 6/10, AUC: 0.9545
+Run 7/10, AUC: 0.9548
+Run 8/10, AUC: 0.9567
+Run 9/10, AUC: 0.9578
+Run 10/10, AUC: 0.9570
+GAE on pubmed: AUC: 0.9533, Std Dev: 0.0043
